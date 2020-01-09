@@ -1371,7 +1371,7 @@ TEST_P(LocalityMapTest, UpdateMap) {
   ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 5000);
   // Wait for the first 3 backends to be ready.
   WaitForAllBackends(0, 3);
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  gpr_log(GPR_INFO, "========= DD TEST BEFORE FIRST BATCH ==========");
   // Send kNumRpcs RPCs.
   CheckRpcSendOk(kNumRpcs);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
