@@ -257,6 +257,7 @@ class XdsClient::ChannelState::AdsCallState
 
   std::set<absl::string_view> ClusterNamesForRequest();
   std::set<absl::string_view> EdsServiceNamesForRequest();
+  std::set<absl::string_view> RouteNamesForRequest();
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -812,17 +813,10 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
         GRPC_ERROR_REF(state.error), !sent_initial_message_);
     state.subscribed_resources[xds_client()->server_name_]->Start(Ref());
   } else if (type_url == XdsApi::kRdsTypeUrl) {
-    std::string name = (xds_client()->lds_result_.has_value()
-                            ? xds_client()->lds_result_->route_config_name
-                            : xds_client()->server_name_);
-    resource_names.insert(name);
+    resource_names = RouteNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateRdsRequest(
-        name, state.version, state.nonce, GRPC_ERROR_REF(state.error),
+        resource_names, state.version, state.nonce, GRPC_ERROR_REF(state.error),
         !sent_initial_message_);
-    auto resource_it = state.subscribed_resources.find(name);
-    if (resource_it != state.subscribed_resources.end()) {
-      resource_it->second->Start(Ref());
-    }
   } else if (type_url == XdsApi::kCdsTypeUrl) {
     resource_names = ClusterNamesForRequest();
     request_payload_slice = xds_client()->api_.CreateCdsRequest(
@@ -1375,6 +1369,17 @@ XdsClient::ChannelState::AdsCallState::EdsServiceNamesForRequest() {
     state->Start(Ref());
   }
   return eds_names;
+}
+
+std::set<absl::string_view>
+XdsClient::ChannelState::AdsCallState::RouteNamesForRequest() {
+  std::set<absl::string_view> route_names;
+  for (auto& p : state_map_[XdsApi::kRdsTypeUrl].subscribed_resources) {
+    route_names.insert(p.first);
+    OrphanablePtr<ResourceState>& state = p.second;
+    state->Start(Ref());
+  }
+  return route_names;
 }
 
 //

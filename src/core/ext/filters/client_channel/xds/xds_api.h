@@ -245,10 +245,10 @@ class XdsApi {
 
   // Creates an RDS request querying \a route_config_name.
   // Takes ownership of \a error.
-  grpc_slice CreateRdsRequest(const std::string& route_config_name,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
+  grpc_slice CreateRdsRequest(
+      const std::set<absl::string_view>& route_config_names,
+      const std::string& version, const std::string& nonce, grpc_error* error,
+      bool populate_node);
 
   // Creates a CDS request querying \a cluster_names.
   // Takes ownership of \a error.

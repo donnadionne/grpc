@@ -511,10 +511,10 @@ grpc_slice XdsApi::CreateLdsRequest(const std::string& server_name,
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
 
-grpc_slice XdsApi::CreateRdsRequest(const std::string& route_config_name,
-                                    const std::string& version,
-                                    const std::string& nonce, grpc_error* error,
-                                    bool populate_node) {
+grpc_slice XdsApi::CreateRdsRequest(
+    const std::set<absl::string_view>& route_config_names,
+    const std::string& version, const std::string& nonce, grpc_error* error,
+    bool populate_node) {
   upb::Arena arena;
   envoy_api_v2_DiscoveryRequest* request =
       CreateDiscoveryRequest(arena.ptr(), kRdsTypeUrl, version, nonce, error);
@@ -525,11 +525,13 @@ grpc_slice XdsApi::CreateRdsRequest(const std::string& route_config_name,
     PopulateNode(arena.ptr(), node_, build_version_, user_agent_name_, "",
                  node_msg);
   }
-  // Add resource_name.
-  envoy_api_v2_DiscoveryRequest_add_resource_names(
-      request,
-      upb_strview_make(route_config_name.data(), route_config_name.size()),
-      arena.ptr());
+  // Add resource_names.
+  for (const auto& route_config_name : route_config_names) {
+    envoy_api_v2_DiscoveryRequest_add_resource_names(
+        request,
+        upb_strview_make(route_config_name.data(), route_config_name.size()),
+        arena.ptr());
+  }
   MaybeLogDiscoveryRequest(client_, tracer_, request);
   return SerializeDiscoveryRequest(arena.ptr(), request);
 }
